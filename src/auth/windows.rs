@@ -2,6 +2,7 @@ use super::BiometricAuthenticator;
 use anyhow::Result;
 
 pub struct WindowsAuthenticator;
+use futures::executor;
 
 impl WindowsAuthenticator {
     pub fn new() -> Result<Self> {
@@ -18,7 +19,7 @@ impl BiometricAuthenticator for WindowsAuthenticator {
     }
 
     fn is_available(&self) -> Result<bool> {
-        // TODO: Check if Windows Hello is available
-        Ok(false)
+        let future = is_windows_hello_available();
+        executor::block_on(future)
     }
 }
