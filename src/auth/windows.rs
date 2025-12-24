@@ -4,6 +4,8 @@ use anyhow::Result;
 pub struct WindowsAuthenticator;
 use futures::executor;
 
+use crate::platform::windows::{authenticate_with_windows_hello, is_windows_hello_available};
+
 impl WindowsAuthenticator {
     pub fn new() -> Result<Self> {
         Ok(WindowsAuthenticator)
@@ -12,7 +14,7 @@ impl WindowsAuthenticator {
 
 impl BiometricAuthenticator for WindowsAuthenticator {
     fn authenticate(&self, _message: &str) -> Result<bool> {
-        let future = authenticate_with_windows_hello(_message)?;
+        let future = authenticate_with_windows_hello(_message);
         executor::block_on(future)
     }
 

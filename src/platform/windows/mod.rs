@@ -8,8 +8,8 @@ use windows::{
     Win32::UI::WindowsAndMessaging::{
         GetDesktopWindow
     },
-    core::{factory, h},
-
+    Win32::System::WinRT::IUserConsentVerifierInterop,
+    core::{factory, HSTRING},
 };
 use windows_future::IAsyncOperation;
 use anyhow::Result;
@@ -17,7 +17,7 @@ use anyhow::Result;
 pub async fn is_windows_hello_available() -> Result<bool> {
     let availability = UserConsentVerifier::CheckAvailabilityAsync()?.await?;
     match availability {
-        UserConsentVerifierAvailability::Available | UserConsentVerifierAvailability::DeviceBusy => Ok(true)
+        UserConsentVerifierAvailability::Available | UserConsentVerifierAvailability::DeviceBusy => Ok(true),
         _ => Ok(false)
     }
 }
@@ -28,8 +28,8 @@ pub async fn authenticate_with_windows_hello(message: &str) -> Result<bool> {
     let hwnd = unsafe { GetDesktopWindow() };
 
     let interop = factory::<UserConsentVerifier, IUserConsentVerifierInterop>()?;
-    let async_op = unsafe {
-        interop.RequestVerificationForWindowAsync(hwnd, h!(message))?
+    let async_op: IAsyncOperation<UserConsentVerificationResult> = unsafe {
+        interop.RequestVerificationForWindowAsync(hwnd, &HSTRING::from(message))?
     };
     let result = async_op.await?;
     match result {
@@ -43,9 +43,6 @@ pub async fn authenticate_with_windows_hello(message: &str) -> Result<bool> {
             | UserConsentVerificationResult::NotConfiguredForUser => {
                 Err(anyhow::anyhow!("Biometric authentication not available"))
             },
-        UserConsentVerificationResult::RetrievingStatus => {
-            Err(anyhow::anyhow!("Authentication failed"))
-        },
         _ => Err(anyhow::anyhow!("Unknown authentication error")),
     }
 }
